@@ -22,7 +22,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS brassins (
 )''')
 conn.commit()
 
-# Liste des levures (tes 2 seulement)
+# Liste des levures
 LEVURES = ["Kveik (Lallemand)", "House Ale (Lallemand)"]
 
 # Sidebar
@@ -36,16 +36,14 @@ if menu == "Nouveau brassin":
     col1, col2 = st.columns(2)
     date_debut = col1.date_input("Début fermentation cuve", value=date.today())
     
-    # Calcul automatique selon levure à 20°C
     if levure.startswith("House Ale"):
         jours_estimes = 4
-        info_levure = "✅ **House Ale** à 20°C : fermentation complète en ~4 jours (Lallemand)"
-    else:  # Kveik
+        info_levure = "✅ **House Ale** à 20°C : fermentation complète en ~4 jours"
+    else:
         jours_estimes = 8
-        info_levure = "⚠️ **Kveik** à 20°C : plus lente que d’habitude (5–12 jours). Idéalement 25–40°C pour rester rapide."
+        info_levure = "⚠️ **Kveik** à 20°C : plus lente (5–12 jours). Idéalement 25–40°C pour rester rapide."
     
     st.info(info_levure)
-    
     date_fin_suggeree = date_debut + timedelta(days=jours_estimes)
     date_fin = col2.date_input("Fin fermentation cuve (estimée)", value=date_fin_suggeree)
     
@@ -53,7 +51,7 @@ if menu == "Nouveau brassin":
         c.execute("INSERT INTO brassins (nom, levure, date_debut_cuve, date_fin_cuve) VALUES (?,?,?,?)",
                   (nom, levure, str(date_debut), str(date_fin)))
         conn.commit()
-        st.success(f"Brassin **{nom}** créé avec {levure} !")
+        st.success(f"Brassin **{nom}** créé !")
         st.rerun()
 
 else:  # Liste des brassins
@@ -61,11 +59,11 @@ else:  # Liste des brassins
     df = pd.read_sql("SELECT * FROM brassins ORDER BY id DESC", conn)
     
     if df.empty:
-        st.info("Aucun brassin encore. Crée le premier dans le menu !")
+        st.info("Aucun brassin encore. Crée le premier !")
     else:
         for _, row in df.iterrows():
             with st.expander(f"🍺 {row['nom']} - {row['levure']}"):
-                # === PHASE CUVE ===
+                # PHASE CUVE
                 debut = datetime.strptime(row['date_debut_cuve'], "%Y-%m-%d").date()
                 fin = datetime.strptime(row['date_fin_cuve'], "%Y-%m-%d").date()
                 today = date.today()
@@ -83,7 +81,7 @@ else:  # Liste des brassins
                 st.progress(progress_cuve / 100)
                 st.caption(f"{progress_cuve}% • {debut} → {fin}")
                 
-                # === PHASE BOUTEILLE ===
+                # PHASE BOUTEILLE
                 if row['date_embouteillage']:
                     st.subheader("Refermentation en bouteille")
                     emb = datetime.strptime(row['date_embouteillage'], "%Y-%m-%d").date()
@@ -95,7 +93,7 @@ else:  # Liste des brassins
                     st.progress(progress_bottle / 100)
                     st.caption(f"{progress_bottle}% • Resucrage : {row['resucrage_g_per_l']} g/L • Fin estimée : {fin_bottle.date()}")
                     
-                    # Visuel bouteille animée
+                    # Visuel bouteille
                     st.markdown(f"""
                     <div style="text-align:center; margin:20px 0;">
                         <div style="width:120px; height:280px; margin:0 auto; border:8px solid #333; border-radius:20px 20px 60px 60px; position:relative; background:#f8f8f8; overflow:hidden;">
@@ -105,27 +103,43 @@ else:  # Liste des brassins
                             <div style="position:absolute; bottom:25%; left:40%; width:8px; height:8px; background:#fff; border-radius:50%; opacity:0.7; animation: bubble 2s infinite 0.3s;"></div>
                             <div style="position:absolute; bottom:15%; left:55%; width:15px; height:15px; background:#fff; border-radius:50%; opacity:0.9; animation: bubble 1.2s infinite 0.6s;"></div>
                             <div style="position:absolute; bottom:35%; left:70%; width:10px; height:10px; background:#fff; border-radius:50%; opacity:0.6; animation: bubble 1.8s infinite 0.9s;"></div>
-                            <style>
-                                @keyframes bubble {{ 0% {{ transform: translateY(0); opacity:0.9; }} 100% {{ transform: translateY(-250px); opacity:0; }} }}
-                            </style>
+                            <style>@keyframes bubble {{0% {{transform:translateY(0);opacity:0.9;}} 100% {{transform:translateY(-250px);opacity:0;}}}}</style>
                         </div>
                         <p style="margin-top:10px; font-size:0.9em;">Bouteille en refermentation • {progress_bottle}%</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    if st.button("🚀 Passer en refermentation bouteille", key=f"bottle_{row['id']}"):
+                    # === FORMULAIRE REFERMENTATION FIXÉ ===
+                    st.subheader("Refermentation en bouteille")
+                    
+                    # Initialisation session_state pour ce brassin
+                    mode_key = f"bottle_mode_{row['id']}"
+                    if mode_key not in st.session_state:
+                        st.session_state[mode_key] = False
+                    
+                    if st.button("🚀 Passer en refermentation bouteille", key=f"bottle_btn_{row['id']}"):
+                        st.session_state[mode_key] = True
+                        st.rerun()
+                    
+                    if st.session_state[mode_key]:
                         col1, col2 = st.columns(2)
                         date_bottle = col1.date_input("Date d'embouteillage", value=date.today(), key=f"date_{row['id']}")
                         resucrage = col2.number_input("Resucrage (g/L)", value=6.0, step=0.5, key=f"res_{row['id']}")
                         jours_est = st.slider("Jours estimés de refermentation", 7, 21, 12, key=f"jours_{row['id']}")
                         
-                        if st.button("Valider la mise en bouteille", key=f"val_{row['id']}"):
+                        col_val, col_ann = st.columns(2)
+                        if col_val.button("✅ Valider la mise en bouteille", type="primary", key=f"val_{row['id']}"):
                             c.execute("""UPDATE brassins SET 
                                        date_embouteillage=?, resucrage_g_per_l=?, jours_referm_estimes=?
                                        WHERE id=?""",
                                       (str(date_bottle), resucrage, jours_est, row['id']))
                             conn.commit()
-                            st.success("Phase bouteille activée !")
+                            st.session_state[mode_key] = False
+                            st.success("Phase bouteille activée avec succès !")
+                            st.rerun()
+                        
+                        if col_ann.button("❌ Annuler", key=f"cancel_{row['id']}"):
+                            st.session_state[mode_key] = False
                             st.rerun()
 
-st.caption("Stack sur mesure • Levures Lallemand uniquement • Mise à jour auto des dates à 20°C")
+st.caption("✅ Bug formulaire corrigé • Port 8502 • Levures Lallemand")
