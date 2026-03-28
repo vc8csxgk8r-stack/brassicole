@@ -4,7 +4,7 @@ services:
   brassin-tracker:
     build: .
     ports:
-      - "8501:8501"          # accessible sur http://ton-ip:8501
+      - "8502:8502"          # accessible sur http://ton-ip:8502
     volumes:
       - ./data:/data         # persistance de ta base SQLite
     restart: unless-stopped
