@@ -93,8 +93,6 @@ else:  # Liste des brassins
                     st.progress(progress_bottle / 100)
                     st.caption(f"{progress_bottle}% • Resucrage : {row['resucrage_g_per_l']} g/L • Fin estimée : {fin_bottle}")
                     
-                    # Visuel bouteille
+                    # Visuel bouteille animée
                     st.markdown(f"""
-                    <div style="text-align:center; margin:20px 0;">
-                        <div style="width:120px; height:280px; margin:0 auto; border:8px solid #333; border-radius:20px 20px 60px 60px; position:relative; background:#f8f8f8; overflow:hidden;">
-                            <div style="position:absolute; bottom:0; left:10px; right:10px; height:{progress_bottle}%; background:linear-gradient(180deg, #ffcc00, #ff
+                    <div
