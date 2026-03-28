@@ -6,6 +6,17 @@ from datetime import datetime, date, timedelta
 st.set_page_config(page_title="🍺 Suivi Brassins", layout="wide")
 st.title("🍺 Suivi Brassins - Cuve + Bouteille")
 
+# ====================== CSS GLOBAL (une seule fois) ======================
+st.markdown("""
+<style>
+    @keyframes bubble {
+        0% { transform: translateY(0); opacity: 0.9; }
+        100% { transform: translateY(-280px); opacity: 0; }
+    }
+</style>
+""", unsafe_allow_html=True)
+# ========================================================================
+
 # Connexion DB
 DB_PATH = "/data/brassins.db"
 conn = sqlite3.connect(DB_PATH)
@@ -54,7 +65,7 @@ if menu == "Nouveau brassin":
         st.success(f"Brassin **{nom}** créé !")
         st.rerun()
 
-else:  # Liste des brassins
+else:
     st.header("📋 Mes brassins")
     df = pd.read_sql("SELECT * FROM brassins ORDER BY id DESC", conn)
     
@@ -93,16 +104,16 @@ else:  # Liste des brassins
                     st.progress(progress_bottle / 100)
                     st.caption(f"{progress_bottle}% • Resucrage : {row['resucrage_g_per_l']} g/L • Fin estimée : {fin_bottle}")
                     
-                    # === NOUVELLE BOUTEILLE BEAUCOUP PLUS RÉALISTE ===
+                    # === BOUTEILLE RÉALISTE (style global déjà chargé) ===
                     st.markdown(f"""
                     <div style="text-align:center; margin:30px 0;">
                         <div style="width:140px; height:320px; margin:0 auto; position:relative;">
-                            <!-- Corps de la bouteille -->
+                            <!-- Corps -->
                             <div style="position:absolute; bottom:0; left:20px; width:100px; height:240px; 
                                         background:linear-gradient(180deg, #f5d88a 0%, #e8b76b 70%, #d4a05a 100%);
                                         border-radius: 15px 15px 60px 60px; border:8px solid #333; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
                             </div>
-                            <!-- Col de la bouteille -->
+                            <!-- Col -->
                             <div style="position:absolute; top:60px; left:48px; width:44px; height:100px; 
                                         background:linear-gradient(#333, #222); border:8px solid #333; border-bottom:none; border-radius:20px 20px 0 0;">
                             </div>
@@ -113,27 +124,19 @@ else:  # Liste des brassins
                             <!-- Bière qui monte -->
                             <div style="position:absolute; bottom:8px; left:28px; width:104px; height:{progress_bottle}%; 
                                         background:linear-gradient(180deg, #f5d88a, #e8b76b); border-radius:0 0 50px 50px; overflow:hidden;">
-                                <!-- Mousse -->
-                                <div style="position:absolute; top:-20px; left:0; right:0; height:30px; background:linear-gradient(#fff, #f5f5f5); border-radius:50px; opacity:0.7;"></div>
+                                <div style="position:absolute; top:-20px; left:0; right:0; height:30px; 
+                                            background:linear-gradient(#fff, #f5f5f5); border-radius:50px; opacity:0.75;"></div>
                             </div>
-                            <!-- Bulles animées -->
+                            <!-- Bulles -->
                             <div style="position:absolute; bottom:20%; left:40%; width:10px; height:10px; background:#fff; border-radius:50%; opacity:0.85; animation:bubble 1.8s infinite;"></div>
                             <div style="position:absolute; bottom:35%; left:55%; width:8px; height:8px; background:#fff; border-radius:50%; opacity:0.75; animation:bubble 2.3s infinite 0.4s;"></div>
                             <div style="position:absolute; bottom:15%; left:70%; width:14px; height:14px; background:#fff; border-radius:50%; opacity:0.9; animation:bubble 1.4s infinite 0.8s;"></div>
                             <div style="position:absolute; bottom:45%; left:35%; width:7px; height:7px; background:#fff; border-radius:50%; opacity:0.6; animation:bubble 2.1s infinite 1.2s;"></div>
-                            
-                            <style>
-                                @keyframes bubble {{
-                                    0% {{ transform: translateY(0); opacity: 0.9; }}
-                                    100% {{ transform: translateY(-280px); opacity: 0; }}
-                                }}
-                            </style>
                         </div>
                         <p style="margin-top:15px; font-size:1em; color:#333;">Bouteille en refermentation • {progress_bottle}%</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    # (le reste du formulaire refermentation reste identique)
                     st.subheader("Refermentation en bouteille")
                     mode_key = f"bottle_mode_{row['id']}"
                     if mode_key not in st.session_state:
@@ -164,7 +167,7 @@ else:  # Liste des brassins
                             st.session_state[mode_key] = False
                             st.rerun()
 
-                # Suppression (inchangée)
+                # Suppression
                 st.divider()
                 delete_key = f"delete_confirm_{row['id']}"
                 if delete_key not in st.session_state:
@@ -187,4 +190,4 @@ else:  # Liste des brassins
                         st.session_state[delete_key] = False
                         st.rerun()
 
-st.caption("✅ Nouvelle bouteille réaliste • Port 8502")
+st.caption("✅ Bouteille corrigée • Animation propre • Port 8502")
