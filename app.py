@@ -91,7 +91,8 @@ else:  # Liste des brassins
                     progress_bottle = min(100, int(((today - emb).days / jours_estimes) * 100))
                     
                     st.progress(progress_bottle / 100)
-                    st.caption(f"{progress_bottle}% • Resucrage : {row['resucrage_g_per_l']} g/L • Fin estimée : {fin_bottle.date()}")
+                    # LIGNE CORRIGÉE ici
+                    st.caption(f"{progress_bottle}% • Resucrage : {row['resucrage_g_per_l']} g/L • Fin estimée : {fin_bottle}")
                     
                     # Visuel bouteille
                     st.markdown(f"""
@@ -109,10 +110,8 @@ else:  # Liste des brassins
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    # === FORMULAIRE REFERMENTATION FIXÉ ===
+                    # FORMULAIRE REFERMENTATION (déjà corrigé précédemment)
                     st.subheader("Refermentation en bouteille")
-                    
-                    # Initialisation session_state pour ce brassin
                     mode_key = f"bottle_mode_{row['id']}"
                     if mode_key not in st.session_state:
                         st.session_state[mode_key] = False
@@ -142,4 +141,4 @@ else:  # Liste des brassins
                             st.session_state[mode_key] = False
                             st.rerun()
 
-st.caption("✅ Bug formulaire corrigé • Port 8502 • Levures Lallemand")
+st.caption("✅ Bug date corrigé • Port 8502 • Levures Lallemand")
