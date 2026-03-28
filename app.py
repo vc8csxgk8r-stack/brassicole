@@ -95,4 +95,72 @@ else:  # Liste des brassins
                     
                     # Visuel bouteille animée
                     st.markdown(f"""
-                    <div
+                    <div style="text-align:center; margin:20px 0;">
+                        <div style="width:120px; height:280px; margin:0 auto; border:8px solid #333; border-radius:20px 20px 60px 60px; position:relative; background:#f8f8f8; overflow:hidden;">
+                            <div style="position:absolute; bottom:0; left:10px; right:10px; height:{progress_bottle}%; background:linear-gradient(180deg, #ffcc00, #ff9900); border-radius:0 0 50px 50px;"></div>
+                            <div style="position:absolute; top:-30px; left:45px; width:30px; height:80px; background:#333; border-radius:10px;"></div>
+                            <div style="position:absolute; bottom:10%; left:25%; width:12px; height:12px; background:#fff; border-radius:50%; opacity:0.8; animation: bubble 1.5s infinite;"></div>
+                            <div style="position:absolute; bottom:25%; left:40%; width:8px; height:8px; background:#fff; border-radius:50%; opacity:0.7; animation: bubble 2s infinite 0.3s;"></div>
+                            <div style="position:absolute; bottom:15%; left:55%; width:15px; height:15px; background:#fff; border-radius:50%; opacity:0.9; animation: bubble 1.2s infinite 0.6s;"></div>
+                            <div style="position:absolute; bottom:35%; left:70%; width:10px; height:10px; background:#fff; border-radius:50%; opacity:0.6; animation: bubble 1.8s infinite 0.9s;"></div>
+                            <style>@keyframes bubble {{0% {{transform:translateY(0);opacity:0.9;}} 100% {{transform:translateY(-250px);opacity:0;}}}}</style>
+                        </div>
+                        <p style="margin-top:10px; font-size:0.9em;">Bouteille en refermentation • {progress_bottle}%</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.subheader("Refermentation en bouteille")
+                    mode_key = f"bottle_mode_{row['id']}"
+                    if mode_key not in st.session_state:
+                        st.session_state[mode_key] = False
+                    
+                    if st.button("🚀 Passer en refermentation bouteille", key=f"bottle_btn_{row['id']}"):
+                        st.session_state[mode_key] = True
+                        st.rerun()
+                    
+                    if st.session_state[mode_key]:
+                        col1, col2 = st.columns(2)
+                        date_bottle = col1.date_input("Date d'embouteillage", value=date.today(), key=f"date_{row['id']}")
+                        resucrage = col2.number_input("Resucrage (g/L)", value=6.0, step=0.5, key=f"res_{row['id']}")
+                        jours_est = st.slider("Jours estimés de refermentation", 7, 21, 12, key=f"jours_{row['id']}")
+                        
+                        col_val, col_ann = st.columns(2)
+                        if col_val.button("✅ Valider la mise en bouteille", type="primary", key=f"val_{row['id']}"):
+                            c.execute("""UPDATE brassins SET 
+                                       date_embouteillage=?, resucrage_g_per_l=?, jours_referm_estimes=?
+                                       WHERE id=?""",
+                                      (str(date_bottle), resucrage, jours_est, row['id']))
+                            conn.commit()
+                            st.session_state[mode_key] = False
+                            st.success("Phase bouteille activée !")
+                            st.rerun()
+                        
+                        if col_ann.button("❌ Annuler", key=f"cancel_{row['id']}"):
+                            st.session_state[mode_key] = False
+                            st.rerun()
+
+                # ====================== SUPPRESSION ======================
+                st.divider()
+                delete_key = f"delete_confirm_{row['id']}"
+                if delete_key not in st.session_state:
+                    st.session_state[delete_key] = False
+                
+                if st.button("🗑️ Supprimer ce brassin", key=f"del_btn_{row['id']}", type="secondary"):
+                    st.session_state[delete_key] = True
+                    st.rerun()
+                
+                if st.session_state[delete_key]:
+                    st.warning("⚠️ Tu es sûr de vouloir supprimer définitivement ce brassin ? Cette action est irréversible.")
+                    col1, col2 = st.columns(2)
+                    if col1.button("✅ Oui, supprimer", type="primary", key=f"confirm_del_{row['id']}"):
+                        c.execute("DELETE FROM brassins WHERE id=?", (row['id'],))
+                        conn.commit()
+                        st.session_state[delete_key] = False
+                        st.success("Brassin supprimé !")
+                        st.rerun()
+                    if col2.button("❌ Annuler", key=f"cancel_del_{row['id']}"):
+                        st.session_state[delete_key] = False
+                        st.rerun()
+                # ========================================================
+
+st.caption("✅ Suppression + formulaire corrigé • Port 8502")
