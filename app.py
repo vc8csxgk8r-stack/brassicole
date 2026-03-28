@@ -9,13 +9,14 @@ st.set_page_config(page_title="Brassicole", layout="wide", page_icon="🍺")
 st.title("🍺 Brassicole - Suivi Brassins Pro")
 
 # ====================== DB ======================
+# ====================== DB + MIGRATION AUTOMATIQUE ======================
 DB_PATH = "/data/brassins.db"
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 c = conn.cursor()
 
-# Migration DB (ajoute les nouvelles colonnes sans tout casser)
+# Création table si elle n'existe pas
 c.execute('''CREATE TABLE IF NOT EXISTS brassins (
     id INTEGER PRIMARY KEY,
     nom TEXT NOT NULL,
@@ -30,6 +31,24 @@ c.execute('''CREATE TABLE IF NOT EXISTS brassins (
     jours_referm_estimes INTEGER
 )''')
 
+# === MIGRATION : ajout des colonnes manquantes (compatibilité ancienne DB) ===
+migration_queries = [
+    "ALTER TABLE brassins ADD COLUMN og REAL",
+    "ALTER TABLE brassins ADD COLUMN fg REAL",
+    "ALTER TABLE brassins ADD COLUMN volume_l REAL",
+    "ALTER TABLE brassins ADD COLUMN date_fin_cuve TEXT",
+    "ALTER TABLE brassins ADD COLUMN resucrage_g_per_l REAL",
+    "ALTER TABLE brassins ADD COLUMN jours_referm_estimes INTEGER"
+]
+
+for query in migration_queries:
+    try:
+        c.execute(query)
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # colonne déjà présente → on ignore
+
+# Table mesures (inchangée)
 c.execute('''CREATE TABLE IF NOT EXISTS mesures (
     id INTEGER PRIMARY KEY,
     brassin_id INTEGER,
@@ -39,7 +58,6 @@ c.execute('''CREATE TABLE IF NOT EXISTS mesures (
     FOREIGN KEY(brassin_id) REFERENCES brassins(id)
 )''')
 conn.commit()
-
 # ====================== CONSTANTES ======================
 LEVURES = ["Kveik (Lallemand)", "House Ale (Lallemand)"]
 
