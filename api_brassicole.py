@@ -20,6 +20,17 @@ app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"]
 )
 
+@app.get("/")
+def root():
+    return {
+        "service": "Brassicole API",
+        "routes": {
+            "brassins":  "/api/brassins",
+            "health":    "/api/health",
+            "docs":      "/docs",
+        }
+    }
+
 def _conn():
     con = sqlite3.connect(DB_PATH, check_same_thread=False)
     con.row_factory = sqlite3.Row
