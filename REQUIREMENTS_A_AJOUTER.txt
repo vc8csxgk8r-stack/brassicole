@@ -1,0 +1,5 @@
+# Ajouter ces lignes dans le requirements.txt existant de Brassicole
+# (en plus de streamlit, pandas, plotly déjà présents)
+
+fastapi==0.111.0
+uvicorn==0.29.0
